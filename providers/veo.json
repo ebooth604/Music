@@ -1,0 +1,18 @@
+{
+  "providerId": "veo",
+  "version": 1,
+  "baseUrl": "https://labs.google/fx/tools/flow",
+  "loggedInCheck": { "selector": "img[aria-label*='Google Account'], a[aria-label*='Google Account']", "loggedOutUrlPattern": "accounts.google.com" },
+  "steps": {
+    "openGenerator": { "url": "https://labs.google/fx/tools/flow" },
+    "promptBox": { "selector": "textarea[placeholder*='Generate' i], textarea[placeholder*='Describe' i]", "clearFirst": true },
+    "uploadStartFrame": { "fileInput": "input[type='file'][accept*='image']", "dropTarget": "[data-testid='frame-upload']" },
+    "setDuration": { "openSelector": "[data-testid='duration']", "optionSelectorTemplate": "[role='option']:has-text('{{seconds}}')" },
+    "setAspectRatio": { "openSelector": "[data-testid='aspect-ratio']", "optionSelectorTemplate": "[role='option']:has-text('{{ratio}}')" },
+    "generate": { "selector": "button[aria-label*='Generate'], button:has-text('Generate')" },
+    "waitForCompletion": { "selector": "[data-testid='result-card']:first-child video[src]", "progressSelector": "[data-testid='result-card']:first-child [role='progressbar']", "timeoutSeconds": 1200, "pollSeconds": 6 },
+    "download": { "videoSelector": "[data-testid='result-card']:first-child video[src]", "downloadButton": "[data-testid='result-card']:first-child button[aria-label*='Download']" }
+  },
+  "blockers": { "captcha": ["iframe[src*='recaptcha']"], "dialogs": ["[role='dialog']:has-text('credits')", "[role='dialog']:has-text('limit')"] },
+  "rateLimit": { "maxConcurrent": 1, "minSecondsBetweenSubmits": 30, "queueFullSelector": "text=/limit|quota/i", "backoffSeconds": 300 }
+}

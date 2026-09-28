@@ -1,0 +1,10 @@
+node_modules/
+dist/
+.env
+.env.local
+*.log
+.DS_Store
+data/
+apps/swift/.build/
+apps/swift/*.xcodeproj
+apps/swift/DerivedData/

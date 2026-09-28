@@ -1,0 +1,21 @@
+{
+  "providerId": "runway",
+  "version": 1,
+  "baseUrl": "https://app.runwayml.com/video-tools/teams",
+  "loggedInCheck": { "selector": "[data-testid='user-menu'], [aria-label='Account']", "loggedOutUrlPattern": "/login" },
+  "steps": {
+    "openGenerator": { "url": "https://app.runwayml.com/video-tools/teams?tool=gen4" },
+    "promptBox": { "selector": "textarea[placeholder*='Describe'], div[contenteditable='true'][data-placeholder*='Describe']", "clearFirst": true },
+    "uploadStartFrame": { "fileInput": "input[type='file'][accept*='image']", "dropTarget": "[data-testid='asset-dropzone']" },
+    "setDuration": { "openSelector": "button[aria-label*='Duration'], [data-testid='duration-select']", "optionSelectorTemplate": "[role='option']:has-text('{{seconds}}s')" },
+    "setAspectRatio": { "openSelector": "button[aria-label*='Ratio'], [data-testid='ratio-select']", "optionSelectorTemplate": "[role='option']:has-text('{{ratio}}')" },
+    "generate": { "selector": "button:has-text('Generate'):not([disabled])" },
+    "waitForCompletion": { "selector": "[data-testid='generation-card']:first-of-type video[src]", "progressSelector": "[data-testid='generation-card']:first-of-type [role='progressbar']", "timeoutSeconds": 900, "pollSeconds": 5 },
+    "download": { "videoSelector": "[data-testid='generation-card']:first-of-type video[src]", "downloadButton": "[data-testid='generation-card']:first-of-type button[aria-label*='Download']" }
+  },
+  "blockers": {
+    "captcha": ["iframe[src*='hcaptcha']", "iframe[src*='recaptcha']", "#challenge-form"],
+    "dialogs": ["[role='dialog']:has-text('credits')", "[role='dialog']:has-text('Upgrade')", "[role='dialog']:has-text('queue')"]
+  },
+  "rateLimit": { "maxConcurrent": 1, "minSecondsBetweenSubmits": 20, "queueFullSelector": "text=/queue is full|too many/i", "backoffSeconds": 120 }
+}

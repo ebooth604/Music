@@ -1,0 +1,18 @@
+{
+  "providerId": "luma",
+  "version": 1,
+  "baseUrl": "https://lumalabs.ai/dream-machine/creations",
+  "loggedInCheck": { "selector": "[data-testid='account-menu'], img[alt*='avatar' i]", "loggedOutUrlPattern": "/login" },
+  "steps": {
+    "openGenerator": { "url": "https://lumalabs.ai/dream-machine/creations" },
+    "promptBox": { "selector": "textarea[placeholder*='Describe' i], [contenteditable='true']", "clearFirst": true },
+    "uploadStartFrame": { "fileInput": "input[type='file'][accept*='image']", "dropTarget": "[data-testid='start-frame']" },
+    "setDuration": { "openSelector": "button:has-text('5s'), button:has-text('9s')", "optionSelectorTemplate": "[role='menuitem']:has-text('{{seconds}}s')" },
+    "setAspectRatio": { "openSelector": "button[aria-label*='aspect' i]", "optionSelectorTemplate": "[role='menuitem']:has-text('{{ratio}}')" },
+    "generate": { "selector": "button[type='submit']:not([disabled]), button:has-text('Generate')" },
+    "waitForCompletion": { "selector": "[data-testid='creation']:first-child video[src]", "progressSelector": "[data-testid='creation']:first-child [data-testid='progress']", "timeoutSeconds": 900, "pollSeconds": 5 },
+    "download": { "videoSelector": "[data-testid='creation']:first-child video[src]", "downloadButton": "[data-testid='creation']:first-child button[aria-label*='Download']" }
+  },
+  "blockers": { "captcha": ["iframe[src*='captcha']"], "dialogs": ["[role='dialog']:has-text('limit')", "[role='dialog']:has-text('Upgrade')"] },
+  "rateLimit": { "maxConcurrent": 1, "minSecondsBetweenSubmits": 20, "queueFullSelector": "text=/limit reached/i", "backoffSeconds": 300 }
+}

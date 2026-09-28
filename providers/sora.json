@@ -1,0 +1,18 @@
+{
+  "providerId": "sora",
+  "version": 1,
+  "baseUrl": "https://sora.chatgpt.com/",
+  "loggedInCheck": { "selector": "[data-testid='profile-button'], button[aria-label*='Profile']", "loggedOutUrlPattern": "/auth" },
+  "steps": {
+    "openGenerator": { "url": "https://sora.chatgpt.com/" },
+    "promptBox": { "selector": "textarea[placeholder*='Describe' i]", "clearFirst": true },
+    "uploadStartFrame": { "fileInput": "input[type='file']", "dropTarget": "[data-testid='composer']" },
+    "setDuration": { "openSelector": "button:has-text('s'):has-text('Duration'), [data-testid='duration']", "optionSelectorTemplate": "[role='menuitemradio']:has-text('{{seconds}}s')" },
+    "setAspectRatio": { "openSelector": "[data-testid='aspect-ratio']", "optionSelectorTemplate": "[role='menuitemradio']:has-text('{{ratio}}')" },
+    "generate": { "selector": "button[aria-label*='Create'], button:has-text('Create')" },
+    "waitForCompletion": { "selector": "[data-testid='library-item']:first-child video[src]", "progressSelector": "[data-testid='library-item']:first-child [role='progressbar']", "timeoutSeconds": 1500, "pollSeconds": 8 },
+    "download": { "videoSelector": "[data-testid='library-item']:first-child video[src]", "downloadButton": "[data-testid='library-item']:first-child button[aria-label*='Download']" }
+  },
+  "blockers": { "captcha": ["iframe[src*='captcha']", "#challenge-stage"], "dialogs": ["[role='dialog']:has-text('limit')", "[role='dialog']:has-text('Upgrade')"] },
+  "rateLimit": { "maxConcurrent": 1, "minSecondsBetweenSubmits": 30, "queueFullSelector": "text=/queue|limit/i", "backoffSeconds": 300 }
+}

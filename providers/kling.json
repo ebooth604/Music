@@ -1,0 +1,18 @@
+{
+  "providerId": "kling",
+  "version": 1,
+  "baseUrl": "https://app.klingai.com/global/image-to-video/frame-mode/new",
+  "loggedInCheck": { "selector": ".user-avatar, [class*='avatar']", "loggedOutUrlPattern": "/login" },
+  "steps": {
+    "openGenerator": { "url": "https://app.klingai.com/global/image-to-video/frame-mode/new" },
+    "promptBox": { "selector": "textarea[placeholder*='prompt' i]", "clearFirst": true },
+    "uploadStartFrame": { "fileInput": "input[type='file']", "dropTarget": "[class*='upload']" },
+    "setDuration": { "openSelector": "[class*='duration']", "optionSelectorTemplate": "[class*='duration'] *:has-text('{{seconds}}s')" },
+    "setAspectRatio": { "openSelector": "[class*='ratio']", "optionSelectorTemplate": "[class*='ratio'] *:has-text('{{ratio}}')" },
+    "generate": { "selector": "button:has-text('Generate'):not([disabled])" },
+    "waitForCompletion": { "selector": "[class*='work-item']:first-child video[src]", "progressSelector": "[class*='work-item']:first-child [class*='progress']", "timeoutSeconds": 1200, "pollSeconds": 6 },
+    "download": { "videoSelector": "[class*='work-item']:first-child video[src]", "downloadButton": "[class*='work-item']:first-child [class*='download']" }
+  },
+  "blockers": { "captcha": ["iframe[src*='captcha']", "[class*='captcha']"], "dialogs": ["[class*='modal']:has-text('credits')", "[class*='modal']:has-text('queue')"] },
+  "rateLimit": { "maxConcurrent": 1, "minSecondsBetweenSubmits": 30, "queueFullSelector": "text=/queue|busy/i", "backoffSeconds": 180 }
+}

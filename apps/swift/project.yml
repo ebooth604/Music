@@ -1,0 +1,39 @@
+# XcodeGen spec: `brew install xcodegen && xcodegen` produces LongForm.xcodeproj with both apps.
+name: LongForm
+options:
+  bundleIdPrefix: com.longform
+  deploymentTarget: { macOS: "14.0", iOS: "17.0" }
+packages:
+  LongFormKitPackage: { path: . }
+targets:
+  LongForm-macOS:
+    type: application
+    platform: macOS
+    sources:
+      - Sources/LongFormMac
+      - { path: ../../providers, type: folder, buildPhase: resources }
+    dependencies: [{ package: LongFormKitPackage, product: LongFormKit }]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.longform.app
+        INFOPLIST_KEY_NSHumanReadableCopyright: ""
+        CODE_SIGN_ENTITLEMENTS: Sources/LongFormMac/LongForm.entitlements
+    entitlements:
+      path: Sources/LongFormMac/LongForm.entitlements
+      properties:
+        com.apple.security.app-sandbox: false        # needs to spawn ffmpeg and talk to Safari/Chrome automation
+        com.apple.security.network.client: true
+        com.apple.security.automation.apple-events: true
+        com.apple.developer.applesignin: [Default]
+  LongForm-iOS:
+    type: application
+    platform: iOS
+    sources: [Sources/LongFormiOS]
+    dependencies: [{ package: LongFormKitPackage, product: LongFormKit }]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.longform.app
+    entitlements:
+      path: Sources/LongFormiOS/LongForm.entitlements
+      properties:
+        com.apple.developer.applesignin: [Default]

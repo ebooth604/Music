@@ -1,0 +1,236 @@
+openapi: 3.1.0
+info:
+  title: LongForm API
+  version: 0.1.0
+  description: |
+    Shared contract consumed by the React web app and the Swift (macOS/iOS) apps.
+    All routes except /auth/* require `Authorization: Bearer <jwt>`.
+servers:
+  - url: /v1
+paths:
+  /auth/apple:
+    post:
+      summary: Sign in with Apple
+      requestBody: { required: true, content: { application/json: { schema: { type: object, required: [identityToken], properties: { identityToken: { type: string } } } } } }
+      responses: { "200": { description: Session, content: { application/json: { schema: { $ref: "#/components/schemas/Session" } } } } }
+  /auth/email/request:
+    post:
+      summary: Request an email magic link
+      requestBody: { required: true, content: { application/json: { schema: { type: object, required: [email], properties: { email: { type: string, format: email } } } } } }
+      responses: { "200": { description: OK } }
+  /auth/email/verify:
+    post:
+      summary: Exchange a magic-link token for a session
+      requestBody: { required: true, content: { application/json: { schema: { type: object, required: [token], properties: { token: { type: string } } } } } }
+      responses: { "200": { description: Session, content: { application/json: { schema: { $ref: "#/components/schemas/Session" } } } } }
+
+  /projects:
+    get: { summary: List projects, responses: { "200": { description: OK, content: { application/json: { schema: { type: array, items: { $ref: "#/components/schemas/Project" } } } } } } }
+    post:
+      summary: Create a project from one prompt (starts Steps A+B)
+      requestBody: { required: true, content: { application/json: { schema: { type: object, required: [prompt], properties: { prompt: { type: string }, title: { type: string }, settings: { $ref: "#/components/schemas/ProjectSettings" } } } } } }
+      responses: { "201": { description: Created, content: { application/json: { schema: { $ref: "#/components/schemas/Project" } } } } }
+  /projects/{id}:
+    parameters: [{ $ref: "#/components/parameters/id" }]
+    get: { summary: Get project, responses: { "200": { description: OK, content: { application/json: { schema: { $ref: "#/components/schemas/Project" } } } } } }
+  /projects/{id}/bible:
+    parameters: [{ $ref: "#/components/parameters/id" }]
+    put:
+      summary: Save edited Story Bible
+      requestBody: { required: true, content: { application/json: { schema: { $ref: "#/components/schemas/StoryBible" } } } }
+      responses: { "200": { description: OK, content: { application/json: { schema: { $ref: "#/components/schemas/Project" } } } } }
+  /projects/{id}/settings:
+    parameters: [{ $ref: "#/components/parameters/id" }]
+    put:
+      summary: Update settings (provider / mode switch applies to all unfinished shots)
+      requestBody: { required: true, content: { application/json: { schema: { $ref: "#/components/schemas/ProjectSettings" } } } }
+      responses: { "200": { description: OK, content: { application/json: { schema: { $ref: "#/components/schemas/Project" } } } } }
+  /projects/{id}/replan: { parameters: [{ $ref: "#/components/parameters/id" }], post: { summary: Re-run Prompt Architect + Story Planner, responses: { "200": { description: OK } } } }
+  /projects/{id}/approve: { parameters: [{ $ref: "#/components/parameters/id" }], post: { summary: Approve bible and start generation, responses: { "200": { description: OK, content: { application/json: { schema: { $ref: "#/components/schemas/Project" } } } } } } }
+  /projects/{id}/pause: { parameters: [{ $ref: "#/components/parameters/id" }], post: { summary: Pause, responses: { "200": { description: OK } } } }
+  /projects/{id}/resume: { parameters: [{ $ref: "#/components/parameters/id" }], post: { summary: Resume from first unfinished shot, responses: { "200": { description: OK } } } }
+  /projects/{id}/shots:
+    parameters: [{ $ref: "#/components/parameters/id" }]
+    get: { summary: List shots with prompts, responses: { "200": { description: OK, content: { application/json: { schema: { type: array, items: { $ref: "#/components/schemas/Shot" } } } } } } }
+  /projects/{id}/progress:
+    parameters: [{ $ref: "#/components/parameters/id" }]
+    get: { summary: Progress, ETA and cost, responses: { "200": { description: OK, content: { application/json: { schema: { $ref: "#/components/schemas/ProgressSummary" } } } } } }
+  /projects/{id}/shots/{index}/prompt:
+    parameters: [{ $ref: "#/components/parameters/id" }, { $ref: "#/components/parameters/index" }]
+    put:
+      summary: Edit a clip prompt
+      requestBody: { required: true, content: { application/json: { schema: { type: object, required: [prompt], properties: { prompt: { type: string } } } } } }
+      responses: { "200": { description: OK, content: { application/json: { schema: { $ref: "#/components/schemas/Shot" } } } } }
+  /projects/{id}/shots/{index}/regenerate:
+    parameters: [{ $ref: "#/components/parameters/id" }, { $ref: "#/components/parameters/index" }]
+    post:
+      summary: Regenerate shot N
+      requestBody: { content: { application/json: { schema: { type: object, properties: { keepPrompt: { type: boolean, default: true } } } } } }
+      responses: { "200": { description: OK, content: { application/json: { schema: { $ref: "#/components/schemas/Shot" } } } } }
+  /projects/{id}/shots/{index}/accept:
+    parameters: [{ $ref: "#/components/parameters/id" }, { $ref: "#/components/parameters/index" }]
+    post: { summary: Accept a failed shot as-is, responses: { "200": { description: OK } } }
+
+  /providers:
+    get: { summary: Provider settings, responses: { "200": { description: OK, content: { application/json: { schema: { type: array, items: { $ref: "#/components/schemas/ProviderSetting" } } } } } } }
+  /providers/{providerId}:
+    parameters: [{ $ref: "#/components/parameters/providerId" }]
+    put:
+      summary: Set mode and/or API key
+      requestBody: { required: true, content: { application/json: { schema: { type: object, properties: { mode: { $ref: "#/components/schemas/GenerationMode" }, apiKey: { type: [string, "null"] } } } } } }
+      responses: { "200": { description: OK } }
+  /providers/{providerId}/test:
+    parameters: [{ $ref: "#/components/parameters/providerId" }]
+    post:
+      summary: Test connection with a 1-line prompt
+      requestBody: { content: { application/json: { schema: { type: object, properties: { mode: { $ref: "#/components/schemas/GenerationMode" } } } } } }
+      responses: { "200": { description: OK, content: { application/json: { schema: { type: object, properties: { ok: { type: boolean }, message: { type: string } } } } } } }
+
+  /workers/register:
+    post:
+      summary: macOS worker registration
+      requestBody: { required: true, content: { application/json: { schema: { type: object, required: [name, providers], properties: { workerId: { type: string }, name: { type: string }, providers: { type: array, items: { type: string } } } } } } }
+      responses: { "200": { description: OK, content: { application/json: { schema: { type: object, properties: { workerId: { type: string } } } } } } }
+  /workers/{workerId}/pull:
+    parameters: [{ $ref: "#/components/parameters/workerId" }]
+    post:
+      summary: Lease the next Browser Mode job
+      requestBody: { required: true, content: { application/json: { schema: { type: object, required: [providers], properties: { providers: { type: array, items: { type: string } } } } } } }
+      responses: { "200": { description: Job or null, content: { application/json: { schema: { oneOf: [{ $ref: "#/components/schemas/BrowserJob" }, { type: "null" }] } } } } }
+  /workers/{workerId}/jobs/{jobId}/upload-url:
+    parameters: [{ $ref: "#/components/parameters/workerId" }, { $ref: "#/components/parameters/jobId" }]
+    post:
+      requestBody: { required: true, content: { application/json: { schema: { type: object, required: [kind], properties: { kind: { type: string, enum: [clip, lastFrame] } } } } } }
+      responses: { "200": { description: OK, content: { application/json: { schema: { type: object, properties: { uploadUrl: { type: string }, publicUrl: { type: string } } } } } } }
+  /workers/{workerId}/jobs/{jobId}/complete:
+    parameters: [{ $ref: "#/components/parameters/workerId" }, { $ref: "#/components/parameters/jobId" }]
+    post:
+      requestBody: { required: true, content: { application/json: { schema: { $ref: "#/components/schemas/BrowserJobResult" } } } }
+      responses: { "200": { description: OK } }
+  /workers/{workerId}/jobs/{jobId}/fail:
+    parameters: [{ $ref: "#/components/parameters/workerId" }, { $ref: "#/components/parameters/jobId" }]
+    post:
+      requestBody: { required: true, content: { application/json: { schema: { type: object, required: [error], properties: { error: { type: string }, paused: { type: boolean } } } } } }
+      responses: { "200": { description: OK } }
+  /workers/{workerId}/jobs/{jobId}/requeue:
+    parameters: [{ $ref: "#/components/parameters/workerId" }, { $ref: "#/components/parameters/jobId" }]
+    post: { summary: Requeue after the user resolved a pause, responses: { "200": { description: OK } } }
+
+components:
+  parameters:
+    id: { name: id, in: path, required: true, schema: { type: string } }
+    index: { name: index, in: path, required: true, schema: { type: integer } }
+    providerId: { name: providerId, in: path, required: true, schema: { $ref: "#/components/schemas/ProviderId" } }
+    workerId: { name: workerId, in: path, required: true, schema: { type: string } }
+    jobId: { name: jobId, in: path, required: true, schema: { type: string } }
+  schemas:
+    Session: { type: object, properties: { token: { type: string }, userId: { type: string } } }
+    ProviderId: { type: string, enum: [runway, kling, luma, sora, veo] }
+    GenerationMode: { type: string, enum: [api, browser] }
+    AspectRatio: { type: string, enum: ["16:9", "9:16", "1:1", "4:3", "21:9"] }
+    ClipLength: { type: integer, enum: [15, 30] }
+    Transition: { type: string, enum: [cut, crossfade] }
+    ShotType: { type: string, enum: [extreme-wide, wide, medium, medium-close, close-up, extreme-close-up, over-the-shoulder, pov, aerial, tracking, insert] }
+    ProjectStatus: { type: string, enum: [draft, planning, bible_ready, prompting, generating, assembling, complete, failed, paused] }
+    ShotStatus: { type: string, enum: [planned, queued, generating, checking, retrying, passed, failed, paused] }
+    ProjectSettings:
+      type: object
+      properties:
+        targetMinutes: { type: number, default: 15 }
+        clipLength: { $ref: "#/components/schemas/ClipLength" }
+        aspectRatio: { $ref: "#/components/schemas/AspectRatio" }
+        providerId: { $ref: "#/components/schemas/ProviderId" }
+        mode: { $ref: "#/components/schemas/GenerationMode" }
+        musicUrl: { type: string }
+        maxRetries: { type: integer, default: 2 }
+    Character:
+      type: object
+      required: [id, name, role, age, face, hair, wardrobe, distinguishingMarks, lockedDescription]
+      properties: { id: { type: string }, name: { type: string }, role: { type: string }, age: { type: string }, face: { type: string }, hair: { type: string }, wardrobe: { type: string }, distinguishingMarks: { type: string }, lockedDescription: { type: string } }
+    Location: { type: object, required: [id, name, lockedDescription], properties: { id: { type: string }, name: { type: string }, lockedDescription: { type: string } } }
+    MasterPrompt:
+      type: object
+      required: [logline, genre, visualStyle, colourPalette, lighting, cameraStyle, pacing, tone, styleBlock]
+      properties: { logline: { type: string }, genre: { type: string }, visualStyle: { type: string }, colourPalette: { type: string }, lighting: { type: string }, cameraStyle: { type: string }, pacing: { type: string }, tone: { type: string }, styleBlock: { type: string }, negativePrompt: { type: string } }
+    Beat:
+      type: object
+      required: [index, scene, action, characterIds, locationId, emotionalTone, shotType]
+      properties:
+        index: { type: integer }
+        scene: { type: string }
+        action: { type: string }
+        characterIds: { type: array, items: { type: string } }
+        locationId: { type: string }
+        emotionalTone: { type: string }
+        shotType: { $ref: "#/components/schemas/ShotType" }
+        transitionIn: { $ref: "#/components/schemas/Transition" }
+        cameraMovement: { type: string }
+    StoryBible:
+      type: object
+      required: [master, characters, locations, beats]
+      properties:
+        master: { $ref: "#/components/schemas/MasterPrompt" }
+        characters: { type: array, items: { $ref: "#/components/schemas/Character" } }
+        locations: { type: array, items: { $ref: "#/components/schemas/Location" } }
+        beats: { type: array, items: { $ref: "#/components/schemas/Beat" } }
+    ContinuityNote: { type: object, properties: { pose: { type: string }, position: { type: string }, lighting: { type: string }, cameraFraming: { type: string }, summary: { type: string } } }
+    QualityReport:
+      type: object
+      properties: { pass: { type: boolean }, score: { type: number }, characterConsistency: { type: number }, styleConsistency: { type: number }, continuity: { type: number }, issues: { type: array, items: { type: string } } }
+    Shot:
+      type: object
+      properties:
+        id: { type: string }
+        projectId: { type: string }
+        index: { type: integer }
+        beat: { $ref: "#/components/schemas/Beat" }
+        prompt: { type: [string, "null"] }
+        continuityNote: { oneOf: [{ $ref: "#/components/schemas/ContinuityNote" }, { type: "null" }] }
+        status: { $ref: "#/components/schemas/ShotStatus" }
+        attempt: { type: integer }
+        clipUrl: { type: [string, "null"] }
+        firstFrameUrl: { type: [string, "null"] }
+        lastFrameUrl: { type: [string, "null"] }
+        quality: { oneOf: [{ $ref: "#/components/schemas/QualityReport" }, { type: "null" }] }
+        providerId: { $ref: "#/components/schemas/ProviderId" }
+        mode: { $ref: "#/components/schemas/GenerationMode" }
+        costUsd: { type: number }
+        error: { type: [string, "null"] }
+        updatedAt: { type: string, format: date-time }
+    Project:
+      type: object
+      properties:
+        id: { type: string }
+        userId: { type: string }
+        title: { type: string }
+        prompt: { type: string }
+        settings: { $ref: "#/components/schemas/ProjectSettings" }
+        status: { $ref: "#/components/schemas/ProjectStatus" }
+        bible: { oneOf: [{ $ref: "#/components/schemas/StoryBible" }, { type: "null" }] }
+        finalUrl: { type: [string, "null"] }
+        error: { type: [string, "null"] }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+    ProgressSummary:
+      type: object
+      properties: { total: { type: integer }, passed: { type: integer }, generating: { type: integer }, failed: { type: integer }, etaSeconds: { type: [number, "null"] }, costUsd: { type: number } }
+    ProviderSetting:
+      type: object
+      properties: { providerId: { $ref: "#/components/schemas/ProviderId" }, mode: { $ref: "#/components/schemas/GenerationMode" }, hasApiKey: { type: boolean }, browserWorkerOnline: { type: boolean } }
+    BrowserJob:
+      type: object
+      required: [id, shotId, projectId, providerId, prompt, duration, aspectRatio, attempt]
+      properties:
+        id: { type: string }
+        shotId: { type: string }
+        projectId: { type: string }
+        providerId: { $ref: "#/components/schemas/ProviderId" }
+        prompt: { type: string }
+        startFrameUrl: { type: [string, "null"] }
+        duration: { $ref: "#/components/schemas/ClipLength" }
+        aspectRatio: { $ref: "#/components/schemas/AspectRatio" }
+        attempt: { type: integer }
+    BrowserJobResult:
+      type: object
+      required: [clipUrl]
+      properties: { clipUrl: { type: string }, lastFrameUrl: { type: [string, "null"] }, meta: { type: object, additionalProperties: true } }
